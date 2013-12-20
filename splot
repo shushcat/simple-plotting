@@ -3,23 +3,45 @@
 from __future__ import division
 from numpy import *
 import matplotlib.pyplot as plt
+import select
 import sys
+import re
+import getopt
 
-fcns = sys.argv[1].split(';')
-minx = eval(sys.argv[2])
-maxx = eval(sys.argv[3])
-plt.xlim(minx, maxx)
-try:
-  miny = float(sys.argv[4])
-  maxy = float(sys.argv[5])
-  plt.ylim(miny, maxy)
-except IndexError:
-  pass
+# Check whether data is being piped.
+if select.select([sys.stdin,], [], [], 0.0) [0]:
+    print "Stdin detected."
+    marker = '.'
+    opts, args = getopt.getopt(sys.argv[1:], 'l')
+    for o, a in opts:
+        if o == '-l':
+            marker = '.-'
+    x = []
+    y = []
+    for line in sys.stdin:
+        line = line.strip()
+        vals = re.split(r'\s+|\s*,\s*', line)
+        x.append(vals[0])
+        y.append(vals[1])
+        plt.plot(x, y, marker)
+else:
+    print "No stdin."
+    fcns = sys.argv[1].split(';')
+    minx = eval(sys.argv[2])
+    maxx = eval(sys.argv[3])
+    plt.xlim(minx, maxx)
+    try:
+        miny = float(sys.argv[4])
+        maxy = float(sys.argv[5])
+        plt.ylim(miny, maxy)
+    except IndexError:
+        pass
+        x = linspace(minx, maxx, 100)
+    for i, f in enumerate(fcns):
+        y = eval(f)
+        plt.plot(x, y, "-", linewidth=2)
 
-x = linspace(minx, maxx, 100)
-for i, f in enumerate(fcns):
-  y = eval(f)
-  plt.plot(x, y, "-", linewidth=2)
+# Common.
 plt.minorticks_on()
 plt.grid(which='both', color='#aaaaaa')
 plt.savefig(sys.stdout, format='png')
